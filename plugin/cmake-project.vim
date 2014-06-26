@@ -24,24 +24,55 @@ if !has('python')
     finish
 endif
 
-if !exists('g:cmake_project_show_bar')
-    let g:cmake_project_show_bar = 0 
-else
-    call s:cmake_show_bar()
-endif
+" function first check for existence of specified option in .vimrc 
+" keeping global option in dictionary for compactness, i.e later if options will grow
+" it will be more convinient to keep in one place.
+function! s:set_options()
+    let s:options = {
+    \  'g:cmake_project_show_bar':                0,
+    \  'g:cmake_project_bar_width':              40,
+    \  'g:cmake_project_folder_open_symbol':     '-',
+    \  'g:cmake_project_folder_close_symbol':    '+',
+    \  'g:cmake_project_build_directory':        'build'
+    \ }
 
-if !exists('g:cmake_project_bar_width')
-    let g:cmake_project_bar_width = 40
-endif
+    for aOption in keys(s:options)
+        if !exists(aOption)
+            let {aOption} = s:options[aOption]
+        endif
+    endfor
+endfunction
 
-if !exists('g:cmake_project_folder_open_symbol')
-    let g:cmake_project_folder_open_symbol = '-'
-endif
+call s:set_options()
 
-if !exists('g:cmake_project_folder_close_symbol')
-    let g:cmake_project_folder_close_symbol = '+'
-endif
+" Commands and maps 
+command -nargs=0 -complete=file CMakeGen call s:cmake_gen_project()
+command -nargs=0 -bar CMakeBar call s:cmake_show_bar()
+map <Space> :call <SID>cmake_on_space_clicked()<CR>
 
+" ----  Generation of project ---------
+function! s:cmake_gen_project() abort
+    " TODO find directory where CMakeLists.txt resides and create binary dir 
+    " if not exist
+    let s:cmake_project_directory = getcwd()
+
+    if !isdirectory(g:cmake_project_build_directory)
+        call mkdir(g:cmake_project_build_directory, "p")
+    endif
+
+    call s:run_cmake(g:cmake_project_build_directory)
+    call s:gen_file_tree(g:cmake_project_build_directory)
+endfunction
+
+
+" Implementation
+function! s:run_cmake(i_directory) abort
+    exec 'cd' a:i_directory
+    exec '!cmake' "-G\"CodeBlocks - Unix Makefiles\" " . s:cmake_project_directory
+    exec 'cd' s:cmake_project_directory
+endfunction
+
+"  ------------------------------- Python ----------------------------
 
 python << EOF
 import vim
@@ -61,20 +92,6 @@ s_cmake_project_node_dict = {}
 s_cmake_project_file_dict = {}
 s_cmake_project_file_tree = create_tree_node()
 EOF
-
-
-" Interface
-command -nargs=1 -complete=file CMakeGen call s:cmake_gen_project(<f-args>)
-command -nargs=0 -bar CMakeBar call s:cmake_show_bar()
-map <Space> :call <SID>cmake_on_space_clicked()<CR>
-
-" Implementation
-function! s:run_cmake(i_directory) abort
-    exec 'cd' a:i_directory
-    exec '!cmake' "-G\"CodeBlocks - Unix Makefiles\" " . s:cmake_project_directory
-    exec 'cd' s:cmake_project_directory
-endfunction
-
 
 function! s:gen_file_tree(i_directory) abort
     exec 'cd' a:i_directory
@@ -116,11 +133,6 @@ EOF
 endfunction
 
 
-function! s:cmake_gen_project(i_directory) abort
-    let s:cmake_project_directory = getcwd()
-    call s:run_cmake(a:i_directory)
-    call s:gen_file_tree(a:i_directory)
-endfunction
 
 
 function! s:cmake_print_file_tree() abort
