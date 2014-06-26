@@ -3,16 +3,32 @@ VIM-CMake-Project v2.0.1
 
 About
 =====
-CMake project management plugin for VIM editor.
+This is a fork of https://github.com/Ignotus/vim-cmake-project 
+
+CMake-Project is a plugin for cmake projects effective management. It provides
+a sidebar that displays project files in the tree view.
 
 [![VCP](http://i.imgur.com/wGeVbl.png)](http://i.imgur.com/wGeVbl.png)
 
 Installing
 ==========
-  
-    $ make install
 
-Specify the DESTDIR variable to install it to the other directory.
+Installation
+
+Before installation, please check your Vim supports python by running :echo has('python'). 1 means you're all set; 0 means you need to install a Vim with python support. If you're compiling Vim yourself you need the 'big' or 'huge' feature set.
+
+If you don't have a preferred installation method, I recommend installing pathogen.vim, and then simply copy and paste:
+
+cd ~/.vim/bundle
+git clone git://github.com/sigidagi/vim-cmake-project.git
+
+Or for Vundle users:
+
+Add Plugin 'sigidagi/vim-cmake-project' to your ~/.vimrc and then:
+
+    either within Vim: :PluginInstall
+    or in your shell: vim +PluginInstall +qall
+
 
 License
 =======
