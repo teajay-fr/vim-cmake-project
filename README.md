@@ -27,6 +27,11 @@ Add Plugin 'sigidagi/vim-cmake-project' to your ~/.vimrc and then:
     either within Vim: :PluginInstall
     or in your shell: vim +PluginInstall +qall
 
+Usage
+=====
+
+Change to project cmake source directory, open with vim CMakeLists.txt and call :CMakeGen. It will create build directory and put all binaries into that directory. :CMakeBar will open sidebar with project files. <Space> key is maped to open file from sidebar on main window.    
+
 
 License
 =======
