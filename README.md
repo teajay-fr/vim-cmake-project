@@ -13,14 +13,12 @@ a sidebar that displays project files in the tree view.
 Installing
 ==========
 
-Installation
-
 Before installation, please check your Vim supports python by running :echo has('python'). 1 means you're all set; 0 means you need to install a Vim with python support. If you're compiling Vim yourself you need the 'big' or 'huge' feature set.
 
 If you don't have a preferred installation method, I recommend installing pathogen.vim, and then simply copy and paste:
 
-cd ~/.vim/bundle
-git clone git://github.com/sigidagi/vim-cmake-project.git
+    cd ~/.vim/bundle
+    git clone git://github.com/sigidagi/vim-cmake-project.git
 
 Or for Vundle users:
 
