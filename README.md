@@ -36,8 +36,10 @@ Change to project cmake source directory, open with vim CMakeLists.txt and call
 It will create build directory and put all binaries into that directory. 
 
     :CMakeBar 
-will open sidebar with project files. "Space" key is mapped to open file from sidebar on main window.    
-
+will open sidebar with project files. "Enter" key is mapped to open file from sidebar on main window.
+It is possible to customize mapping by providing for example such command in vimrc script file
+    
+    :nmap <leader><CR> <Plug>CMakeProjectShowFileInWindow 
 
 License
 =======

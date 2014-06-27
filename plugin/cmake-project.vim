@@ -24,6 +24,13 @@ if !has('python')
     finish
 endif
 
+" allow users to disable loading plugin by providing global variable.
+" another reason - to avoid loading plugin twice.
+if exists("g:loaded_cmake_project")
+    finish
+endif
+
+
 " function first check for existence of specified option in .vimrc 
 " keeping global option in dictionary for compactness, i.e later if options will grow
 " it will be more convinient to keep in one place.
@@ -33,6 +40,7 @@ function! s:set_options()
     \  'g:cmake_project_bar_width':              40,
     \  'g:cmake_project_folder_open_symbol':     '-',
     \  'g:cmake_project_folder_close_symbol':    '+',
+    \  'g:loaded_cmake_project':                  1,
     \  'g:cmake_project_build_directory':        'build'
     \ }
 
@@ -45,10 +53,18 @@ endfunction
 
 call s:set_options()
 
+
 " Commands and maps 
 command -nargs=0 -complete=file CMakeGen call s:cmake_gen_project()
 command -nargs=0 -bar CMakeBar call s:cmake_show_bar()
-map <Space> :call <SID>cmake_on_space_clicked()<CR>
+
+noremap <unique> <Plug>CMakeProjectShowFileInWindow :call <SID>cmake_on_space_clicked()<CR>
+
+if !hasmapto('<Plug>CMakeProjectShowFileInWindow')
+    nmap <unique> <CR> <Plug>CMakeProjectShowFileInWindow 
+endif
+
+
 
 " ----  Generation of project ---------
 function! s:cmake_gen_project() abort
@@ -193,7 +209,8 @@ function! s:cmake_show_bar() abort
     setlocal nomodifiable
 endfunction
 
-
+"To invoke a script local function, defined with the "s:" prefix, from a map, you have to prefix the function name with <SID>. 
+"You cannot use the "s:" prefix for the script-local function, as the map will be invoked from outside of the script context.
 function! <SID>cmake_on_space_clicked() abort
     if !exists('s:cmake_project_bufname') || bufname('%') != s:cmake_project_bufname
         return
