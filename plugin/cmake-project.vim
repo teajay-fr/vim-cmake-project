@@ -1,35 +1,25 @@
 " vim-cmake-project
-" Copyright (C) 2012-2014 Minh Ngo <nlminhtl@gmail.com>
+" Plugin provides list and navigation of project files on side bar with a help of NERDTree plugin 
+" and command(s) for building cmake projects.
+" Side bar shows only project related files: C/C++. ( NERDTree is filtered out )
+" CMake command is deactivated and NERDTree structure is restored when CMakeLists.txt is removed from buffer.
 "
-" Permission is hereby granted, free of charge, to any person obtaining a
-" copy of this software and associated documentation files (the "Software"),
-" to deal in the Software without restriction, including without limitation
-" the rights to use, copy, modify, merge, publish, distribute, sublicense,
-" and/or sell copies of the Software, and to permit persons to whom the
-" Software is furnished to do so, subject to the following conditions:
-
-" The above copyright notice and this permission notice shall be included in
-" all copies or substantial portions of the Software.
-
-" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-" SOFTWARE.
-
-if !has('python')
-    echo 'Error: Required vim compiled with +python'
-    finish
-endif
-
+" Last change: 2014 Juni 29
+" Maintainer: Sigitas Dagilis sigidagi@gmail.com
+" License: BSD
+"
 " allow users to disable loading plugin by providing global variable.
 " another reason - to avoid loading plugin twice.
 if exists("g:loaded_cmake_project")
     finish
 endif
 
+" First should be loaded nerd-tree plugin. 
+if !exists('g:loaded_nerd_tree')
+    echohl WarningMsg   
+    echo '[cmake-project] Warning: "NERD-Tree" plugin is needed for complete functionality'
+    echohl NONE
+endif
 
 " function first check for existence of specified option in .vimrc 
 " keeping global option in dictionary for compactness, i.e later if options will grow
@@ -37,9 +27,6 @@ endif
 function! s:set_options()
     let s:options = {
     \  'g:cmake_project_show_bar':                0,
-    \  'g:cmake_project_bar_width':              40,
-    \  'g:cmake_project_folder_open_symbol':     '-',
-    \  'g:cmake_project_folder_close_symbol':    '+',
     \  'g:loaded_cmake_project':                  1,
     \  'g:cmake_project_build_directory':        'build'
     \ }
@@ -51,209 +38,66 @@ function! s:set_options()
     endfor
 endfunction
 
+function! s:init()
+  augroup vim-cmake-project.vim
+    au!
+    "au! BufRead,BufNewFile *.cmake,*.cmake.in   setfiletype cmake
+    au BufRead,BufNewFile,BufEnter CMakeLists.txt       setfiletype cmake
+    au FileType cmake :call s:cmake_project_activate()
+    au BufDelete CMakeLists.txt :call s:cmake_project_deactivate()
+  augroup END
+endfunction
+
+" Start ---------------------
 call s:set_options()
+call s:init()
 
-
-" Commands and maps 
-command -nargs=0 -complete=file CMakeGen call s:cmake_gen_project()
-command -nargs=0 -bar CMakeBar call s:cmake_show_bar()
-
-noremap <unique> <Plug>CMakeProjectShowFileInWindow :call <SID>cmake_on_space_clicked()<CR>
-
-if !hasmapto('<Plug>CMakeProjectShowFileInWindow')
-    nmap <unique> <CR> <Plug>CMakeProjectShowFileInWindow 
-endif
-
-
-
-" ----  Generation of project ---------
-function! s:cmake_gen_project() abort
-    " TODO find directory where CMakeLists.txt resides and create binary dir 
-    " if not exist
-    let s:cmake_project_directory = getcwd()
-
-    if !isdirectory(g:cmake_project_build_directory)
-        call mkdir(g:cmake_project_build_directory, "p")
-    endif
-
-    call s:run_cmake(g:cmake_project_build_directory)
-    call s:gen_file_tree(g:cmake_project_build_directory)
-endfunction
-
-
-" Implementation
-function! s:run_cmake(i_directory) abort
-    exec 'cd' a:i_directory
-    exec '!cmake' "-G\"CodeBlocks - Unix Makefiles\" " . s:cmake_project_directory
-    exec 'cd' s:cmake_project_directory
-endfunction
-
-"  ------------------------------- Python ----------------------------
-
-python << EOF
-import vim
-from sets import Set
-
-s_cmake_project_show_bar = vim.eval('g:cmake_project_show_bar')
-s_cmake_project_bar_width = vim.eval('g:cmake_project_bar_width')
-
-class Prop:
-    visible = True
-    def __init__(self, visible):
-        self.visible = visible
-
-create_tree_node = lambda: ({}, Set(), Prop(True))
-
-s_cmake_project_node_dict = {}
-s_cmake_project_file_dict = {}
-s_cmake_project_file_tree = create_tree_node()
-EOF
-
-function! s:gen_file_tree(i_directory) abort
-    exec 'cd' a:i_directory
-
-python << EOF
-import vim
-import glob
-import xml.etree.ElementTree as ET
-
-current_dir = vim.eval('s:cmake_project_directory')
-current_dir_len = len(current_dir) + 1
-
-project_file = glob.glob('*.cbp')[0]
-tree = ET.parse(project_file)
-root = tree.getroot()
-
-files = [file_name.get('filename') for file_name in root.findall("./Project/Unit")]
-
-s_cmake_project_file_tree = create_tree_node()
-
-for file in files:
-    paths = file[current_dir_len:].split('/')
-    file_name = paths[-1]
-    paths.pop()
-
-    current_tree_ref = s_cmake_project_file_tree 
-    for path in paths:
-        directories, _, _ = current_tree_ref
-        if not directories.has_key(path):
-            directories[path] = create_tree_node()
-        current_tree_ref = directories[path]
-
-    _, files, _ = current_tree_ref
-    files.add((file_name, file))
-
-EOF
-
-    exec 'cd' s:cmake_project_directory
-endfunction
-
-
-
-
-function! s:cmake_print_file_tree() abort
-
-python << EOF
-
-folder_open_symbol = vim.eval('g:cmake_project_folder_open_symbol')
-folder_close_symbol = vim.eval('g:cmake_project_folder_close_symbol')
-
-def process_folder(i_directory, i_recursion_level):
-    directories, files, _ = i_directory
-    for (file_name, full_path) in sorted(files, key = lambda item: (int(item.partition(' ')[0])
-                                                                    if item[0].isdigit() else float('inf'), item)):
-        text = '   ' * i_recursion_level
-        text += file_name
-        s_cmake_project_file_dict[len(vim.current.buffer)] = full_path
-        vim.current.buffer.append(text)
+" Commands -------------------
+" Check if buffers contains project file CMakeLists.txt. Deactivate commands if such
+" file do not exist and vice versa. 
+function! s:cmake_project_activate()
+    command! -nargs=0 -complete=file CMake call s:cmake_project_build()
+    command! -nargs=0 -bar CMakeBar call s:cmake_project_toggle_barwindow()
     
-
-    for folder_name in directories.keys():
-        text = '   ' * i_recursion_level
-        folder_content = directories[folder_name]
-        subdir, subfiles, prop = folder_content
-        text += (folder_open_symbol if prop.visible == True else folder_close_symbol) + folder_name
-        s_cmake_project_node_dict[len(vim.current.buffer)] = prop
-        vim.current.buffer.append(text)
-        if prop.visible == True:
-            process_folder(folder_content, i_recursion_level + 1)
-        
-s_cmake_project_node_dict =  {}
-process_folder(s_cmake_project_file_tree, 0)
-EOF
-
-    " Remove first line
-    normal gg
-    normal dd 
+    let s:cmake_project_source_directory = expand("<afile>:p:h")
 endfunction
 
-
-function! s:cmake_show_bar() abort
-    try
-        bdelete @CMakeProject
-    catch
-    endtry
-
-    topleft vsplit
-    badd @CMakeProject
-    buffer @CMakeProject
-    setlocal buftype=nofile
-    exec 'vertical' 'resize ' . g:cmake_project_bar_width
-    setlocal modifiable
-
-    let s:cmake_project_bufname = bufname('%')
-    normal gg    
-    normal dG
-
-    call s:cmake_print_file_tree()
-    setlocal nomodifiable
-endfunction
-
-"To invoke a script local function, defined with the "s:" prefix, from a map, you have to prefix the function name with <SID>. 
-"You cannot use the "s:" prefix for the script-local function, as the map will be invoked from outside of the script context.
-function! <SID>cmake_on_space_clicked() abort
-    if !exists('s:cmake_project_bufname') || bufname('%') != s:cmake_project_bufname
-        return
+" Remove cmake commands and filter from NERDTree
+function! s:cmake_project_deactivate() abort
+    delcommand CMake
+    delcommand CMakeBar
+    let g:NERDTreeIgnore = []
+   
+    " 
+    let blisted = filter(range(1, bufnr('$')), 'buflisted(v:val) && v:val != bufnr(expand("<afile>"))')
+    let bjump = (blisted + [-1])[0]
+    if bjump > 0
+        execute 'buffer ' . bjump
     endif
 
-    let current_line = line('.')
-python << EOF
-current_row, current_col = vim.current.window.cursor
-current_line = vim.current.buffer[current_row - 1]
-non_spaces = filter(lambda x: x != ' ', current_line)
-
-def hide():
-    if s_cmake_project_node_dict.has_key(current_row):
-        s_cmake_project_node_dict[current_row].visible = False
-        vim.command('hide')
-        vim.command('call s:cmake_show_bar()')
-
-def show():
-    if s_cmake_project_node_dict.has_key(current_row):
-        s_cmake_project_node_dict[current_row].visible = True
-        vim.command('hide')
-        vim.command('call s:cmake_show_bar()')
-
-get_file_path = lambda: s_cmake_project_file_dict[current_row]
-
-def open():
-    vim.command('wincmd l')
-
-    file_path = get_file_path()
-    vim.command('badd ' + file_path) 
-    vim.command('buffer ' + file_path)
-    vim.command('setlocal switchbuf=useopen')
-    vim.command('sbuffer @CMakeProject')
-
-
-if non_spaces:
-    if non_spaces[0] == folder_open_symbol:
-        hide()
-    elif non_spaces[0] == folder_close_symbol:
-        show()
-    else:
-        open()
-EOF
-    exec l:current_line
-
+    "if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary")  
+        "quit 
+    "endif
 endfunction
+
+" Build project ---------- 
+function! s:cmake_project_build() abort
+    let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
+
+    if !isdirectory(build_directory)
+        call mkdir(build_directory, "p")
+    endif
+
+    exec '!cmake' "-G\"Unix Makefiles\" -B" . build_directory . " -H" . s:cmake_project_source_directory  
+endfunction
+
+" Toggle Bar window --------
+function! s:cmake_project_toggle_barwindow() abort
+    if (!exists("b:NERDTreeType"))
+        let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
+        call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
+    else
+        call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
+    endif
+endfunction
+

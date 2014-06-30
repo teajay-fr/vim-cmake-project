@@ -1,9 +1,9 @@
 *cmake-project.txt*   CMake project management plugin 
 
-Author:         Minh Ngo <minh@fedoraproject.org>
+Author:         Sigitas Dagilis<sigidagi@gmail.com>
 Licence:        BSD
-Homepage:       http://github.com/Ignotus/vim-cmake-project
-Version:        2.0.0
+Homepage:       http://github.com/sigidagi/vim-cmake-project
+Version:        0.1.0
 
 ==============================================================================
 Contents                                  *cmake-project* *cmake-project-contents*
@@ -21,102 +21,84 @@ Contents                                  *cmake-project* *cmake-project-content
 ==============================================================================
 1. Intro                                                   *cmake-project-intro*
 
-CMake-Project is a plugin for cmake projects effective management. It provides
-a sidebar that shows files in the tree view.
+Fork of http://github.com/Ignotus/vim-cmake-project
+Source code completely rewritten. It uses NERDTree plugin to provide
+navigation and tree view list of project files on a sidebar.
 
 ==============================================================================
 2. Requirements                                     *cmake-project-requirements*
 
-You need to have the VIM editor that supports python scripting. You can check
-it by this command in a console:
+You need to have the NERDTree plugin installed. VIM major version == 7
 
-    $ vim --version |grep +python
-    +cryptv          +linebreak       +python/dyn      +viminfo
+    $ vim --version 
 
 ==============================================================================
 3. Installation                                     *cmake-project-installation*
 
-Change your current directory to the plugin root archive directory and use
-install methods:
+If you don't have a preferred installation method, I recommend installing
+pathogen.vim, and then simply copy and paste:
 >
-    make install
+    cd ~/.vim/bundle
+    git clone git://github.com/sigidagi/vim-cmake-project.git
 <
 
-You can specify a destination install directory by following methods:
+Or for Vundle users: Add Plugin 'sigidagi/vim-cmake-project' to your ~/.vimrc
+and then:
 >
-    make install DESTDIR=/opt/vim
+    either within Vim: :PluginInstall
+    or in your shell: vim +PluginInstall +qall
 <
-
-By default, DESTDIR is equal to ~/.vim/
-
 ==============================================================================
 4. Usage                                                   *cmake-project-usage*
 
-First of all, you should go to the cmake project directory.
+
+Open CMake project file "CMakeLists.txt" with vim. CMake project file do not have to be
+in current working directory. 
+
+You can generate a cmake content for VIM by this command:
 >
-    $ cd <project directory>
+    :CMake
 <
-Secondly, create a folder for cmake project build files.
->
-    $ mkdir <build dir>
-<
-Thirdly, start your VIM editor in the project directory.
->
-    $ vim
-<
-Fourthly, You can generate a cmake content for VIM by this command:
->
-    :CMakeGen <build dir>
-<
-Show the project bar by the command:
+It will create build directory and build project 
+Show/toggle the project bar by the command:
 >
     :CMakeBar
 <
-Press <Space> over a directory to hide/show its contents. Press <Space> over a
-file to open it.
+Press <CR> over a directory to hide/show its contents. Press <CR> over a
+file to open it. For navigation and usage of tree list refer help of NERDTree  
 
 ------------------------------------------------------------------------------
 COMMANDS                                                *cmake-project-commands*
 
-:CMakeGen {build-directory}                                          *:CMakeGen*
+:CMake                                                              *:CMakeGen*
     Generate a cmake project content for VIM.
 
 :CMakeBar                                                            *:CMakeBar*
-    Show a project bar.
+    Show/toggle a project bar.
 
 ==============================================================================
 5. Configuration                                   *cmake-project-configuration*
                 
-                                                      *g:cmake_project_show_bar*
-g:cmake_project_show_bar~
-Default: 0
+                                               *g:cmake_project_build_directory*
+g:cmake_project_build_directory~
+Default: "build" 
 
-Enable this parameter to show the cmake project bar after starting.
-
-Example:
->
-    let g:cmake_project_show_bar = 1
-<
-
-                                                     *g:cmake_project_bar_width*
-g:cmake_project_bar_width~
-Default: 40
-
-You can change CMake Project panel width by this variable.
+Change this parameter to provide build directory name.
 
 Example:
 >
-    let g:cmake_project_bar_width = 40
+    let g:cmake_project_build_directory = "build-custom" 
 <
 ==============================================================================
 6. History                                               *cmake-project-history*
 
-2.0.0 (2014-02-21)
-    - Second major release. All code had been rewritten in Python. Interface
-      and configuration paramters was simplified.
+0.2.0 (2014-02-29)
+    - All code had been rewritten to minimize source code (less than 100 lines) 
+      to utilize NERDTree plugin flexibility and functionality.
 
-1.0.0 (2012-10-21)
-    - First major release.
+0.1.0 (2014-06-26)
+    - fork from http://github.com/Ignotus/vim-cmake-project 
+
 
 ==============================================================================
 7. Todo                                                     *cmake-project-todo*
@@ -128,30 +110,6 @@ Example:
 ==============================================================================
 8. Credits                                               *cmake-project-credits*
 
-CMake-project was written by Minh Ngo and is released under the BSD License.
-
-    Copyright (C) 2012-2014 Minh Ngo <nlminhtl@gmail.com>
-
-    Permission is hereby granted, free of charge, to any person obtaining a
-    copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-Thanks to the following people for code contributions, feature suggestions etc:
-Nikolay Pavlov (http://habrahabr.ru/users/ZyXI/)
 
 ==============================================================================
  vim: tw=78 ts=8 sw=4 sts=4 et ft=help  
