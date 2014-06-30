@@ -37,7 +37,7 @@ Call cammand to build project
 It will create build directory (if it do not exist), build the project and save all binaries into that directory. 
 
     :CMakeBar 
-will open sidebar with project files. Command utilizes NERDTree functionality. For navigation and viewing see NERDTree documantation. Sidebar view will only schow C/C++ related files and TXT files. 
+will open sidebar with project files. Command utilizes NERDTree functionality. For navigation and viewing see NERDTree documantation. Sidebar view will only show C/C++ related files and TXT files. 
 
 License
 =======
