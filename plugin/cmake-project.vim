@@ -59,6 +59,7 @@ function! s:cmake_project_activate()
     command! -nargs=0 -complete=file CMake call s:cmake_project_build()
     command! -nargs=0 -bar CMakeBar call s:cmake_project_toggle_barwindow()
     
+    let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
     let s:cmake_project_source_directory = expand("<afile>:p:h")
 endfunction
 
@@ -67,17 +68,6 @@ function! s:cmake_project_deactivate() abort
     delcommand CMake
     delcommand CMakeBar
     let g:NERDTreeIgnore = []
-   
-    " 
-    let blisted = filter(range(1, bufnr('$')), 'buflisted(v:val) && v:val != bufnr(expand("<afile>"))')
-    let bjump = (blisted + [-1])[0]
-    if bjump > 0
-        execute 'buffer ' . bjump
-    endif
-
-    "if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary")  
-        "quit 
-    "endif
 endfunction
 
 " Build project ---------- 
@@ -94,10 +84,8 @@ endfunction
 " Toggle Bar window --------
 function! s:cmake_project_toggle_barwindow() abort
     if (!exists("b:NERDTreeType"))
-        let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
         call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
     else
         call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
     endif
 endfunction
-
