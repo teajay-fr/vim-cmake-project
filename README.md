@@ -30,16 +30,14 @@ Add Plugin 'sigidagi/vim-cmake-project' to your ~/.vimrc and then:
 Usage
 =====
 
-Change to project cmake source directory, open with vim CMakeLists.txt and call 
+Open cmake project file "CMakeLists.txt" with vim. File not necessary has to be in current working directory.
+Call cammand to build project
 
-    :CMakeGen. 
-It will create build directory and put all binaries into that directory. 
+    :CMake 
+It will create build directory (if it do not exist), build the project and save all binaries into that directory. 
 
     :CMakeBar 
-will open sidebar with project files. "Enter" key is mapped to open file from sidebar on main window.
-It is possible to customize mapping by providing for example such command in vimrc script file
-    
-    :nmap <leader><CR> <Plug>CMakeProjectShowFileInWindow 
+will open sidebar with project files. Command utilizes NERDTree functionality. For navigation and viewing see NERDTree documantation. Sidebar view will only show C/C++ related files and TXT files. 
 
 License
 =======
