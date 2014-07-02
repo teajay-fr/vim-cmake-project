@@ -26,7 +26,7 @@ endif
 " it will be more convinient to keep in one place.
 function! s:set_options()
     let s:options = {
-    \  'g:cmake_project_show_bar':                0,
+    \  'g:cmake_project_show_bar':                1,
     \  'g:loaded_cmake_project':                  1,
     \  'g:cmake_project_build_directory':        'build'
     \ }
@@ -41,9 +41,7 @@ endfunction
 function! s:init()
   augroup vim-cmake-project.vim
     au!
-    "au! BufRead,BufNewFile *.cmake,*.cmake.in   setfiletype cmake
-    au BufRead,BufNewFile,BufEnter CMakeLists.txt       setfiletype cmake
-    au FileType cmake :call s:cmake_project_activate()
+    au BufNewFile,BufRead CMakeLists.txt :call s:cmake_project_activate() 
     au BufDelete CMakeLists.txt :call s:cmake_project_deactivate()
   augroup END
 endfunction
@@ -61,13 +59,33 @@ function! s:cmake_project_activate()
     
     let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
     let s:cmake_project_source_directory = expand("<afile>:p:h")
+    
+    if !exists("t:NERDTreeBufName") && g:cmake_project_show_bar == 1
+        call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
+    endif
 endfunction
 
 " Remove cmake commands and filter from NERDTree
 function! s:cmake_project_deactivate() abort
-    delcommand CMake
-    delcommand CMakeBar
-    let g:NERDTreeIgnore = []
+    
+    if exists("t:NERDTreeBufName") && bufwinnr(t:NERDTreeBufName) != -1 && winnr("$") == 1
+        let choice = confirm(  
+            \ "Closing CMakeLists.txt will close project. Are you sure?",
+            \ "&Yes\n&No, return to project", 1) 
+        if choice == 1
+            delcommand CMake
+            delcommand CMakeBar
+            let g:NERDTreeIgnore = []
+            quit
+        endif 
+       
+        " Restore CMakeLists.txt by opening it again
+        let p = g:NERDTreePath.New(expand("<afile>:p")) " get the path to the CMakeLists.txt file
+        call g:NERDTreeFocus()                          " change focus to nerd tree view
+        call b:NERDTreeRoot.reveal(p)                   " find CMakeLists.txt on the tree 
+        call g:nerdtree#invokeKeyMap("o")               " invoke open action
+
+    endif
 endfunction
 
 " Build project ---------- 
@@ -82,8 +100,8 @@ function! s:cmake_project_build() abort
 endfunction
 
 " Toggle Bar window --------
-function! s:cmake_project_toggle_barwindow() abort
-    if (!exists("b:NERDTreeType"))
+function! s:cmake_project_toggle_barwindow() 
+    if !exists("t:NERDTreeBufName") 
         call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
     else
         call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
