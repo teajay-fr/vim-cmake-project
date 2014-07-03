@@ -43,7 +43,7 @@ function! s:init()
     au!
     au BufNewFile,BufRead,BufEnter CMakeLists.txt :call s:cmake_project_activate() 
     au BufDelete CMakeLists.txt :call s:cmake_project_deactivate()
-    au BufDelete *.cpp :call s:cmake_project_opennext()
+    au BufDelete * :call s:cmake_project_opennext()
   augroup END
 endfunction
 
@@ -56,7 +56,9 @@ call s:init()
 " file do not exist and vice versa. 
 function! s:cmake_project_activate()
     command! -nargs=0 -complete=file CMake call s:cmake_project_build()
+    command! -nargs=0 -complete=file Make call s:cmake_project_compile()
     command! -nargs=0 -bar CMakeBar call s:cmake_project_toggle_barwindow()
+    command! -nargs=0 -bar CMakeClean call s:cmake_project_clean()
     
     let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
     let s:cmake_project_source_directory = expand("<afile>:p:h")
@@ -112,6 +114,24 @@ function! s:cmake_project_build() abort
     endif
 
     exec '!cmake' "-G\"Unix Makefiles\" -B" . build_directory . " -H" . s:cmake_project_source_directory  
+endfunction
+
+function! s:cmake_project_compile()
+    let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
+    if !isdirectory(build_directory) || !filereadable(build_directory ."/Makefile")
+        echo 'Run first :CMake command to create "Makefile"'
+        return
+    endif
+ 
+    exec '!make -C ' . build_directory
+endfunction
+
+function! s:cmake_project_clean()
+    let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
+    if isdirectory(build_directory)
+        exec '!rm -rf ' . build_directory
+        echo "build directory " . build_directory . " removed"
+    endif
 endfunction
 
 " Toggle Bar window --------
