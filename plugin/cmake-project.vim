@@ -41,8 +41,9 @@ endfunction
 function! s:init()
   augroup vim-cmake-project.vim
     au!
-    au BufNewFile,BufRead CMakeLists.txt :call s:cmake_project_activate() 
+    au BufNewFile,BufRead,BufEnter CMakeLists.txt :call s:cmake_project_activate() 
     au BufDelete CMakeLists.txt :call s:cmake_project_deactivate()
+    au BufDelete *.cpp :call s:cmake_project_opennext()
   augroup END
 endfunction
 
@@ -65,6 +66,24 @@ function! s:cmake_project_activate()
     endif
 endfunction
 
+function! s:cmake_project_jumptofile(path)
+        let p = g:NERDTreePath.New(a:path)  "get the path to a file
+
+        call g:NERDTreeFocus()              " change focus to nerd tree view
+        call b:NERDTreeRoot.reveal(p)       " find that file on the tree 
+        call g:nerdtree#invokeKeyMap("o")   " invoke open action
+endfunction
+
+function! s:cmake_project_opennext()
+    if exists("t:NERDTreeBufName") && bufwinnr(t:NERDTreeBufName) != -1 && winnr("$") == 1
+        let blisted = filter(range(1, bufnr('$')), 'buflisted(v:val) && v:val != bufnr(expand("<afile>"))')
+        let bjump = (blisted + [-1])[0]
+        if bjump > 0
+            call s:cmake_project_jumptofile(fnamemodify(bufname(bjump), ":p"))
+        endif
+    endif
+endfunction
+
 " Remove cmake commands and filter from NERDTree
 function! s:cmake_project_deactivate() abort
     
@@ -80,11 +99,7 @@ function! s:cmake_project_deactivate() abort
         endif 
        
         " Restore CMakeLists.txt by opening it again
-        let p = g:NERDTreePath.New(expand("<afile>:p")) " get the path to the CMakeLists.txt file
-        call g:NERDTreeFocus()                          " change focus to nerd tree view
-        call b:NERDTreeRoot.reveal(p)                   " find CMakeLists.txt on the tree 
-        call g:nerdtree#invokeKeyMap("o")               " invoke open action
-
+        call s:cmake_project_jumptofile(expand("<afile>:p"))
     endif
 endfunction
 
