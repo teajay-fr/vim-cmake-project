@@ -1,4 +1,4 @@
-" vim-cmake-project
+"" vim-cmake-project
 " Plugin provides list and navigation of project files on side bar with a help of NERDTree plugin 
 " and command(s) for building cmake projects.
 " Side bar shows only project related files: C/C++. ( NERDTree is filtered out )
@@ -13,6 +13,7 @@
 if exists("g:loaded_cmake_project")
     finish
 endif
+
 
 " function first check for existence of specified option in .vimrc 
 " keeping global option in dictionary for compactness, i.e later if options will grow
@@ -34,10 +35,10 @@ endfunction
 function! s:init()
   augroup vim-cmake-project.vim
     au!
-    au BufNewFile,BufRead,BufEnter CMakeLists.txt :call s:cmake_project_activate() 
+    au BufNewFile,BufRead CMakeLists.txt :call s:cmake_project_activate() 
     au BufDelete CMakeLists.txt :call s:cmake_project_deactivate()
     au BufDelete * :call s:cmake_project_opennext()
-    au VimLeavePre * :call s:cmake_project_leave()
+    au VimLeavePre * :call s:cmake_project_close_output()
   augroup END
 endfunction
 
@@ -46,16 +47,35 @@ let s:cmake_project_tmux_running = 0
 call s:set_options()
 call s:init()
 
+function! s:cmake_project_remap()
+   
+    if !hasmapto('<Plug>CMakeCompile')
+        map <unique> <Leader>pc <Plug>CMakeCompile 
+    endif
+    if !hasmapto('<Plug>CMakeClean')
+        map <unique> <Leader>pl <Plug>CMakeClean 
+    endif
+    if !hasmapto('<Plug>CMakeBuild')
+        map <unique> <Leader>pb <Plug>CMakeBuild
+    endif
+
+    noremap <script> <Plug>CMakeBuild :call <SID>cmake_project_build()<CR>
+    noremap <script> <Plug>CMakeCompile :call <SID>cmake_project_compile()<CR>
+    noremap <script> <Plug>CMakeClean :call <SID>cmake_project_clean()<CR>
+
+endfunction
+
 " Commands -------------------
 " Check if buffers contains project file CMakeLists.txt. Deactivate commands if such
 " file do not exist and vice versa. 
 function! s:cmake_project_activate()
     
-    call s:cmake_project_checkplugins()
-
-    command! -nargs=0 -complete=file CMake call s:cmake_project_build()
+    command! -nargs=0 -complete=file CMakeBuild call s:cmake_project_build()
     command! -nargs=0 -complete=file CMakeCompile call s:cmake_project_compile()
     command! -nargs=0 -bar CMakeClean call s:cmake_project_clean()
+    
+    call s:cmake_project_checkplugins()
+    call s:cmake_project_remap()
     
     let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
     let s:cmake_project_source_directory = expand("<afile>:p:h")
@@ -77,6 +97,10 @@ function! s:cmake_project_checkplugins()
         call s:cmake_project_warning('[cmake-project] "NERD-Tree" plugin is needed for complete functionality')
     else
         command! -nargs=0 -bar CMakeBar call s:cmake_project_toggle_barwindow()
+        if !hasmapto('<Plug>CMakeBar')
+            map <unique> <Leader>pt <Plug>CMakeBar
+        endif
+        noremap <script> <Plug>CMakeBar :call <SID>cmake_project_toggle_barwindow()<CR>
     endif
     
     if !executable("tmux")
@@ -86,6 +110,11 @@ function! s:cmake_project_checkplugins()
         call s:cmake_project_warning('[cmake-project] Run "tmux" first, and then open project. You will thank me later.')
     else
         let s:cmake_project_tmux_running = 1
+        command! -nargs=0 -bar CMakeOutput call s:cmake_project_close_output()
+        if !hasmapto('<Plug>CMakeOutput')
+            map <unique> <Leader>po <Plug>CMakeOutput
+        endif
+        noremap <script> <Plug>CMakeOutput :call <SID>cmake_project_close_output()<CR>
     endif
 endfunction
 
@@ -98,6 +127,7 @@ function! s:cmake_project_jumptofile(path)
 endfunction
 
 function! s:cmake_project_opennext()
+
     if exists("t:NERDTreeBufName") && 
                 \ bufwinnr(t:NERDTreeBufName) != -1 && 
                 \ winnr("$") == 1 && 
@@ -111,27 +141,31 @@ function! s:cmake_project_opennext()
 endfunction
 
 function! s:cmake_project_delcommands()
-    delcommand CMake
+    delcommand CMakeBuild
     delcommand CMakeCompile
     delcommand CMakeClean
     if exists('g:loaded_nerd_tree')
         delcommand CMakeBar
     endif
+    if $TMUX != "" 
+        delcommand CMakeOutput
+    endif
     let g:NERDTreeIgnore = []
 endfunction
 
-function! s:cmake_project_leave()
+"  
+function! s:cmake_project_close_output()
     if (s:cmake_project_tmux_running)
         call VimuxCloseRunner()
     endif
 endfunction
 
 function! s:cmake_project_deactivate() 
-    
+
     if exists("t:NERDTreeBufName") && 
                 \ bufwinnr(t:NERDTreeBufName) != -1 && 
                 \ winnr("$") == 1 &&
-                \ exists('g:loaded_neerd_tree')
+                \ exists('g:loaded_nerd_tree')
         let choice = confirm(  
             \ "Closing CMakeLists.txt will close project. Are you sure?",
             \ "&Yes\n&No, return to project", 1) 
@@ -139,7 +173,6 @@ function! s:cmake_project_deactivate()
             call s:cmake_project_delcommands()
             quit
         endif 
-       
         " Restore CMakeLists.txt by opening it again
         call s:cmake_project_jumptofile(expand("<afile>:p"))
     else 
@@ -165,7 +198,7 @@ endfunction
 function! s:cmake_project_compile()
     let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
     if !isdirectory(build_directory) || !filereadable(build_directory ."/Makefile")
-        echo 'Run first :CMake command to create "Makefile"'
+        echo 'Run first :CMakeBuild command to create "Makefile"'
         return
     endif
     if s:cmake_project_tmux_running 
@@ -195,3 +228,4 @@ function! s:cmake_project_toggle_barwindow()
         call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
     endif
 endfunction
+
