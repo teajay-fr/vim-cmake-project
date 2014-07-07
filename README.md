@@ -34,6 +34,7 @@ Installing
 Install NERDTree and Vimux plugins (optional):
 
 https://github.com/scrooloose/nerdtree
+
 https://github.com/benmills/vimux
 
 Install vim-cmake-project.
