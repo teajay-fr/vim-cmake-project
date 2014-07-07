@@ -13,8 +13,6 @@ a sidebar that displays project files in the tree view.
 Installing
 ==========
 
-Before installation, please check your Vim supports python by running :echo has('python'). 1 means you're all set; 0 means you need to install a Vim with python support. If you're compiling Vim yourself you need the 'big' or 'huge' feature set.
-
 If you don't have a preferred installation method, I recommend installing pathogen.vim, and then simply copy and paste:
 
     cd ~/.vim/bundle
@@ -57,7 +55,7 @@ To toggle bar window with project files issue following command:
 For navigation and usage of tree list in bar window refer to "NERDTree" plugin help
 
 
-Default maping:
+Default key maping:
 
     map <Leader>pb <Plug>CMakeBuild
     map <Leader>pc <Plug>CMakeCompile
