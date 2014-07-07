@@ -11,6 +11,7 @@ The intention was to provide minor changes, but I ended up with complete rewrite
 depends on other (optional) plugins, like NERDTree and Vimux.  
 
 vim-cmake-project has following features:
+
 1. Project is activated only by opening cmake project file: "CMakeLists.txt". Project file "CMakeLists.txt" do not have
    to be in the current working directory. I.e "vim ~/prg/cplus/test/CMakeLists.txt". All above described commands will
    be available for the use.
