@@ -1,4 +1,4 @@
-VIM-CMake-Project v2.0.1
+VIM-CMake-Project v0.3.0
 ===============
 
 About
@@ -8,7 +8,7 @@ This is a fork of https://github.com/Ignotus/vim-cmake-project
 CMake-Project is a plugin for cmake projects effective management. It provides
 a sidebar that displays project files in the tree view.
 
-![VCP](https://github.com/sigidagi/vim-cmake-project/tree/master/doc/vim-cmake-project-screenshot.png)
+![VCP](https://raw.githubusercontent.com/sigidagi/vim-cmake-project/master/doc/vim-cmake-project-screenshot.png)
 
 Installing
 ==========
