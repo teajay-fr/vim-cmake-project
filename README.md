@@ -26,7 +26,6 @@ Screenshot
 ![VCP](https://raw.githubusercontent.com/sigidagi/vim-cmake-project/master/doc/vim-cmake-project-screenshot.png)
 
 
-Fork this project!
 
 Installing
 ==========
