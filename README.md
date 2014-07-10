@@ -8,7 +8,7 @@ CMake-Project is a plugin for cmake projects effective management.
 
 This is a fork of https://github.com/Ignotus/vim-cmake-project 
 The intention was to provide minor changes, but I ended up with complete rewrite of the project. It
-depends on other (optional) plugins, like NERDTree and Vimux.  
+depends on others (optional) plugins, like NERDTree and Vimux.  
 
 vim-cmake-project has following features:
 
