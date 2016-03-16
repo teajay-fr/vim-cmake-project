@@ -81,7 +81,7 @@ function! s:cmake_project_activate()
     let s:cmake_project_source_directory = expand("<afile>:p:h")
     
     if !exists("t:NERDTreeBufName") && g:cmake_project_show_bar == 1 && exists('g:loaded_nerd_tree')
-        call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
+        call g:NERDTreeCreator.CreateTabTree(s:cmake_project_source_directory)
     endif
 endfunction
 
@@ -223,7 +223,7 @@ endfunction
 " Toggle Bar window --------
 function! s:cmake_project_toggle_barwindow() 
     if !exists("t:NERDTreeBufName") 
-        call g:NERDTreeCreator.CreatePrimary(s:cmake_project_source_directory)
+        call g:NERDTreeCreator.CreateTabTree(s:cmake_project_source_directory)
     else
         call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
     endif
