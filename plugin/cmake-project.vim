@@ -22,7 +22,8 @@ function! s:set_options()
     let s:options = {
     \  'g:cmake_project_show_bar':                1,
     \  'g:loaded_cmake_project':                  1,
-    \  'g:cmake_project_build_directory':        'build'
+    \  'g:cmake_project_build_directory':        'build',
+    \  'g:cmake_project_options':                 ''
     \ }
 
     for aOption in keys(s:options)
@@ -43,7 +44,6 @@ function! s:init()
 endfunction
 
 " Start ---------------------
-let s:cmake_project_tmux_running = 0
 call s:set_options()
 call s:init()
 
@@ -69,19 +69,20 @@ endfunction
 " Check if buffers contains project file CMakeLists.txt. Deactivate commands if such
 " file do not exist and vice versa. 
 function! s:cmake_project_activate()
-    
-    command! -nargs=0 -complete=file CMakeBuild call s:cmake_project_build()
-    command! -nargs=0 -complete=file CMakeCompile call s:cmake_project_compile()
-    command! -nargs=0 -bar CMakeClean call s:cmake_project_clean()
-    
-    call s:cmake_project_checkplugins()
-    call s:cmake_project_remap()
-    
-    let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
-    let s:cmake_project_source_directory = expand("<afile>:p:h")
-    
-    if !exists("t:NERDTreeBufName") && g:cmake_project_show_bar == 1 && exists('g:loaded_nerd_tree')
-        call g:NERDTreeCreator.CreateTabTree(s:cmake_project_source_directory)
+    if !exists('s:cmake_project_source_directory')
+        command! -nargs=0 -complete=file CMakeBuild call s:cmake_project_build()
+        command! -nargs=0 -complete=file CMakeCompile call s:cmake_project_compile()
+        command! -nargs=0 -bar CMakeClean call s:cmake_project_clean()
+
+        call s:cmake_project_checkplugins()
+        call s:cmake_project_remap()
+
+        let g:NERDTreeIgnore = ['\(\.txt\|\.cpp\|\.hpp\|\.c\|\.h\)\@<!$[[file]]']
+        let s:cmake_project_source_directory = expand("<afile>:p:h")
+
+        if !exists("t:NERDTreeBufName") && g:cmake_project_show_bar == 1 && exists('g:loaded_nerd_tree')
+            call g:NERDTreeCreator.CreateTabTree(s:cmake_project_source_directory)
+        endif
     endif
 endfunction
 
@@ -103,19 +104,6 @@ function! s:cmake_project_checkplugins()
         noremap <script> <Plug>CMakeBar :call <SID>cmake_project_toggle_barwindow()<CR>
     endif
     
-    if !executable("tmux")
-        call s:cmake_project_warning('[cmake-project] "tmux" installation is recommended for complete functionality')
-        call s:cmake_project_warning('[cmake-project] After installation run "tmux" in a terminal and open project')
-    elseif $TMUX == ""
-        call s:cmake_project_warning('[cmake-project] Run "tmux" first, and then open project. You will thank me later.')
-    else
-        let s:cmake_project_tmux_running = 1
-        command! -nargs=0 -bar CMakeOutput call s:cmake_project_close_output()
-        if !hasmapto('<Plug>CMakeOutput')
-            map <unique> <Leader>po <Plug>CMakeOutput
-        endif
-        noremap <script> <Plug>CMakeOutput :call <SID>cmake_project_close_output()<CR>
-    endif
 endfunction
 
 function! s:cmake_project_jumptofile(path)
@@ -147,18 +135,10 @@ function! s:cmake_project_delcommands()
     if exists('g:loaded_nerd_tree')
         delcommand CMakeBar
     endif
-    if $TMUX != "" 
-        delcommand CMakeOutput
-    endif
     let g:NERDTreeIgnore = []
 endfunction
 
 "  
-function! s:cmake_project_close_output()
-    if (s:cmake_project_tmux_running)
-        call VimuxCloseRunner()
-    endif
-endfunction
 
 function! s:cmake_project_deactivate() 
 
@@ -187,9 +167,10 @@ function! s:cmake_project_build() abort
     if !isdirectory(build_directory)
         call mkdir(build_directory, "p")
     endif
-    let command = "cmake -G\"Unix Makefiles\" -B" . build_directory . " -H" . s:cmake_project_source_directory 
-    if s:cmake_project_tmux_running
-        call VimuxRunCommand(command)
+    exec ':cd ' . build_directory
+    let command = "cmake " . g:cmake_project_options . "-G\"Ninja\" -B" . build_directory . " -H" . s:cmake_project_source_directory 
+    if exists(':AsyncRun')
+        exec ':AsyncRun ' .command
     else
         exec '!' .command 
     endif
@@ -197,22 +178,23 @@ endfunction
 
 function! s:cmake_project_compile()
     let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
-    if !isdirectory(build_directory) || !filereadable(build_directory ."/Makefile")
-        echo 'Run first :CMakeBuild command to create "Makefile"'
+    if !isdirectory(build_directory) || !filereadable(build_directory ."/build.ninja")
+        echo 'Run first :CMakeBuild command to create "build.ninja"'
         return
     endif
-    if s:cmake_project_tmux_running 
-        call VimuxRunCommand('make -C' .build_directory)
+    exec ':cd ' . build_directory
+    if exists(':AsyncRun') 
+        exec ':AsyncRun cmake --build ' .build_directory
     else
-        exec '!make -C ' . build_directory
+        exec '!cmake --build ' . build_directory
     endif
 endfunction
 
 function! s:cmake_project_clean()
     let build_directory = s:cmake_project_source_directory . "/" . g:cmake_project_build_directory
     if isdirectory(build_directory)
-        if (s:cmake_project_tmux_running)
-            call VimuxRunCommand('rm -rf ' .build_directory)
+        if exists(':AsyncRun')
+            exec ':AsyncRun rm -rf ' .build_directory
         else
             exec '!rm -rf ' . build_directory
             echo "build directory " . build_directory . " removed"
@@ -225,7 +207,7 @@ function! s:cmake_project_toggle_barwindow()
     if !exists("t:NERDTreeBufName") 
         call g:NERDTreeCreator.CreateTabTree(s:cmake_project_source_directory)
     else
-        call g:NERDTreeCreator.TogglePrimary(s:cmake_project_source_directory)
+        call g:NERDTreeCreator.ToggleTabTree(s:cmake_project_source_directory)
     endif
 endfunction
 
